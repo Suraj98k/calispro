@@ -12,6 +12,7 @@ export interface IWorkout extends Document {
   name: string;
   description: string;
   imageUrl?: string;
+  videoUrl?: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   exercises: IWorkoutExercise[];
   durationEstimate?: number;
@@ -36,6 +37,7 @@ const WorkoutSchema = new Schema<IWorkout>(
     name: { type: String, required: true },
     description: { type: String, required: true },
     imageUrl: { type: String },
+    videoUrl: { type: String },
     level: { type: String, enum: ['Beginner', 'Intermediate', 'Advanced'], required: true },
     exercises: { type: [WorkoutExerciseSchema], default: [] },
     durationEstimate: { type: Number },

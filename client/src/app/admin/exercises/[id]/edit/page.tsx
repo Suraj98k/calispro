@@ -86,7 +86,6 @@ export default function AdminExerciseEditPage() {
       description: overrides.description ?? exercise?.description ?? initialForm.description,
       level: overrides.level ?? exercise?.level ?? initialForm.level,
       category: overrides.category ?? exercise?.category ?? initialForm.category,
-      instructions: overrides.instructions ?? (exercise?.instructions || []).join(', '),
       primaryMuscles: overrides.primaryMuscles ?? (exercise?.primaryMuscles || []).join(', '),
       secondaryMuscles: overrides.secondaryMuscles ?? (exercise?.secondaryMuscles || []).join(', '),
       formTips: overrides.formTips ?? (exercise?.formTips || []).join(', '),
@@ -104,7 +103,7 @@ export default function AdminExerciseEditPage() {
       return;
     }
 
-    const payload: Partial<FormState> = {
+    const payload: Parameters<typeof updateMutation.mutateAsync>[0]['payload'] = {
       name: form.name.trim(),
       description: form.description.trim(),
       level: form.level,
@@ -124,7 +123,7 @@ export default function AdminExerciseEditPage() {
     }
 
     try {
-      await updateMutation.mutateAsync({ id, payload: payload as Parameters<typeof updateMutation.mutateAsync>[0]['payload'] });
+      await updateMutation.mutateAsync({ id, payload });
       toast.success('Exercise updated');
       router.push('/admin/exercises');
     } catch (error: unknown) {

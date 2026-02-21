@@ -10,6 +10,11 @@ const apiClient = axios.create({
 // Request interceptor to attach auth token
 apiClient.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData) {
+      // Let the browser set multipart boundaries automatically.
+      delete config.headers['Content-Type'];
+    }
+
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken');
       if (token) {

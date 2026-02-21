@@ -1,15 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, CheckCircle2, AlertCircle, Target, Activity, Lightbulb, CirclePlay } from 'lucide-react';
+import { ArrowLeft, CirclePlay, Video } from 'lucide-react';
 import { notFound, useParams } from 'next/navigation';
-import React from 'react';
-import { motion } from 'framer-motion';
 
-import { getExerciseVisual } from '@/lib/exerciseVisuals';
-import { useExerciseById, useExercises } from '@/lib/hooks/useApi';
+import { useExerciseById } from '@/lib/hooks/useApi';
 import type { Exercise } from '@/types';
-import { cn } from '@/lib/utils';
 
 const exerciseFallbackImages: Record<Exercise['category'], string> = {
   Push: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1200&auto=format&fit=crop',
@@ -25,28 +21,33 @@ const getYouTubeEmbedUrl = (url?: string) => {
   if (!url) return null;
   const trimmed = url.trim();
   const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
-  if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}?autoplay=1`;
+  if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}?autoplay=1&mute=1&rel=0`;
 
   const regularMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
-  if (regularMatch?.[1]) return `https://www.youtube.com/embed/${regularMatch[1]}?autoplay=1`;
+  if (regularMatch?.[1]) return `https://www.youtube.com/embed/${regularMatch[1]}?autoplay=1&mute=1&rel=0`;
 
   if (trimmed.includes('youtube.com/embed/')) {
-    const url = trimmed.includes('?') ? `${trimmed}&autoplay=1` : `${trimmed}?autoplay=1`;
-    return url;
+    return trimmed.includes('?') ? `${trimmed}&autoplay=1&mute=1&rel=0` : `${trimmed}?autoplay=1&mute=1&rel=0`;
   }
+  return null;
+};
+
+const getInlineVideoUrl = (url?: string) => {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (/^https?:\/\/.+\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(trimmed)) return trimmed;
+  if (trimmed.includes('/video/upload/') || trimmed.includes('/videos/')) return trimmed;
   return null;
 };
 
 export default function ExerciseDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { data: exercise, isLoading } = useExerciseById(id);
 
-  const { data: exercise, isLoading: isExerciseLoading } = useExerciseById(id);
-  const { data: allExercises, isLoading: isAllExercisesLoading } = useExercises();
-
-  if (isExerciseLoading || isAllExercisesLoading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -55,17 +56,13 @@ export default function ExerciseDetailPage() {
     notFound();
   }
 
-  const easierLinks =
-    exercise.progressions?.easier
-      ?.map((progId) => allExercises?.find((entry) => entry.id === progId))
-      .filter(Boolean) ?? [];
-  const harderLinks =
-    exercise.progressions?.harder
-      ?.map((progId) => allExercises?.find((entry) => entry.id === progId))
-      .filter(Boolean) ?? [];
-  const visual = getExerciseVisual(exercise.category, exercise.name);
-  const exerciseVideoUrl = getYouTubeEmbedUrl(exercise.videoUrl);
-  const exerciseImageUrl = exercise.imageUrl || exerciseFallbackImages[exercise.category];
+  const inlineVideoUrl = getInlineVideoUrl(exercise.videoUrl);
+  const embedVideoUrl = getYouTubeEmbedUrl(exercise.videoUrl);
+  const fallbackImage = exercise.imageUrl || exerciseFallbackImages[exercise.category];
+  const instructions = [
+    ...(exercise.formTips || []),
+    ...(exercise.commonMistakes || []).map((item) => `Avoid: ${item}`),
+  ];
 
   return (
     <section className="animate-fade-in space-y-5 pb-20">
@@ -74,27 +71,8 @@ export default function ExerciseDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to exercises
         </Link>
-        <div className="mt-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <motion.span
-              initial={{ rotate: -10, scale: 0.9 }}
-              animate={{ rotate: 0, scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className={`inline-flex rounded-lg border border-white/10 p-2 ${visual.panelClassName}`}
-            >
-              {visual.iconUrl ? (
-                <img src={visual.iconUrl} alt={`${exercise.name} icon`} className="h-4 w-4 object-contain brightness-0 invert opacity-95" />
-              ) : (
-                <visual.Icon className="h-4 w-4 text-white/80" />
-              )}
-            </motion.span>
-            <h1 className="text-2xl font-black tracking-tight text-white">{exercise.name}</h1>
-          </div>
-          <div className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest", visual.badgeClassName)}>
-            {exercise.category}
-          </div>
-        </div>
-        <p className="mt-2 text-sm text-soft max-w-2xl">{exercise.description}</p>
+        <h1 className="mt-3 text-2xl font-black tracking-tight text-white">{exercise.name}</h1>
+        <p className="mt-1 text-sm text-soft">{exercise.description}</p>
         <Link
           href={`/dashboard/track/${exercise.id}?mode=exercise`}
           className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground transition-all hover:brightness-110"
@@ -104,150 +82,51 @@ export default function ExerciseDetailPage() {
         </Link>
       </header>
 
-      {/* Technique & Execution Protocol - Replaces Video Section */}
-      <section className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
-        <article className="app-surface p-6 shadow-xl shadow-primary/[0.02]">
-          <div className="flex items-center gap-3 mb-6">
-            <div className={`h-10 w-10 rounded-xl flex items-center justify-center border border-white/5 bg-black/20 ${visual.panelClassName}`}>
-              {visual.iconUrl ? (
-                <img src={visual.iconUrl} alt={`${exercise.name} icon`} className="h-5 w-5 object-contain brightness-0 invert opacity-95" />
-              ) : (
-                <visual.Icon className="h-5 w-5 text-primary" />
-              )}
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-white tracking-tight leading-none">Execution Technique</h2>
-              <p className="text-[10px] uppercase font-bold text-soft mt-1.5 tracking-widest">Protocol Instructions</p>
-            </div>
+      <section className="app-surface space-y-4 p-5">
+        <h2 className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-white">
+          <Video className="h-4 w-4 text-primary" />
+          Video + Instructions
+        </h2>
+
+        <div className="overflow-hidden rounded-xl border border-border bg-black/20">
+          {inlineVideoUrl ? (
+            <video
+              src={inlineVideoUrl}
+              className="h-[260px] w-full object-cover md:h-[360px]"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+            />
+          ) : embedVideoUrl ? (
+            <iframe
+              src={embedVideoUrl}
+              title={`${exercise.name} demo`}
+              className="h-[260px] w-full md:h-[360px]"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <img src={fallbackImage} alt={exercise.name} className="h-[260px] w-full object-cover md:h-[360px]" />
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface-2/30 p-4">
+          <p className="text-xs font-black uppercase tracking-widest text-soft">Instructions</p>
+          <div className="mt-3 space-y-2">
+            {instructions.length ? (
+              instructions.map((item, idx) => (
+                <p key={`${item}-${idx}`} className="text-sm text-white/90">
+                  {idx + 1}. {item}
+                </p>
+              ))
+            ) : (
+              <p className="text-sm text-soft">No instructions available.</p>
+            )}
           </div>
-
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border-subtle bg-black/20">
-              {exerciseVideoUrl ? (
-                <iframe
-                  src={exerciseVideoUrl}
-                  title={`${exercise.name} demo`}
-                  className="h-[240px] w-full md:h-[320px]"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <img src={exerciseImageUrl} alt={exercise.name} className="h-[240px] w-full object-cover md:h-[320px]" />
-              )}
-            </div>
-          </div>
-        </article>
-
-        <aside className="space-y-5">
-          {/* Muscle Targets */}
-          <section className="app-surface p-6">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-primary mb-5 flex items-center gap-2">
-              <Target className="h-3 w-3" />
-              Muscle Activation
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-[9px] font-black text-soft uppercase mb-2">Primary Drivers</p>
-                <div className="flex flex-wrap gap-2">
-                  {exercise.primaryMuscles.map(muscle => (
-                    <span key={muscle} className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary">
-                      {muscle}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {exercise.secondaryMuscles.length > 0 && (
-                <div>
-                  <p className="text-[9px] font-black text-soft uppercase mb-2">Secondary Support</p>
-                  <div className="flex flex-wrap gap-2">
-                    {exercise.secondaryMuscles.map(muscle => (
-                      <span key={muscle} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-soft">
-                        {muscle}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Coach HUD - Tips & Faults */}
-          <section className="app-surface p-6 border-l-2 border-amber-500/30">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-white mb-5 flex items-center gap-2">
-              <Lightbulb className="h-3 w-3 text-amber-500" />
-              Coach&apos;s HUD
-            </h3>
-
-            <div className="space-y-6">
-              {/* Form Tips */}
-              <div className="space-y-3">
-                {exercise.formTips.map((tip, idx) => (
-                  <div key={idx} className="flex gap-3">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-white/80 leading-relaxed italic">&quot;{tip}&quot;</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Common Mistakes */}
-              {exercise.commonMistakes.length > 0 && (
-                <div className="pt-4 border-t border-white/5 space-y-2">
-                  <p className="text-[9px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <AlertCircle className="h-2.5 w-2.5" />
-                    Technical Faults to Avoid
-                  </p>
-                  <ul className="space-y-2">
-                    {exercise.commonMistakes.map((mistake, idx) => (
-                      <li key={idx} className="text-xs text-soft flex gap-2 items-start">
-                        <span className="h-1 w-1 rounded-full bg-red-400/50 mt-1.5 flex-shrink-0" />
-                        {mistake}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Progressions */}
-          <section className="app-surface p-6">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-white mb-5 flex items-center gap-2">
-              <Activity className="h-3 w-3 text-blue-400" />
-              System Roadmap
-            </h3>
-            <div className="space-y-2">
-              {easierLinks.map((item) => (
-                <Link
-                  key={item?.id}
-                  href={`/dashboard/exercises/${item?.id}`}
-                  className="flex items-center justify-between rounded-xl border border-border-subtle bg-surface-2/40 px-4 py-3.5 text-sm transition-all hover:border-border-strong hover:bg-surface-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/50" />
-                    <span className="text-xs font-bold text-white"><span className="text-soft font-normal">Easier:</span> {item?.name}</span>
-                  </div>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-soft" />
-                </Link>
-              ))}
-              {harderLinks.map((item) => (
-                <Link
-                  key={item?.id}
-                  href={`/dashboard/exercises/${item?.id}`}
-                  className="flex items-center justify-between rounded-xl border border-border-subtle bg-surface-2/40 px-4 py-3.5 text-sm transition-all hover:border-border-strong hover:bg-surface-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500/50" />
-                    <span className="text-xs font-bold text-white"><span className="text-soft font-normal">Harder:</span> {item?.name}</span>
-                  </div>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-soft" />
-                </Link>
-              ))}
-              {(!easierLinks.length && !harderLinks.length) && (
-                <p className="text-[10px] text-soft italic text-center py-2 text-balance leading-relaxed">No alternate protocols detected. High-level mastery required.</p>
-              )}
-            </div>
-          </section>
-        </aside>
+        </div>
       </section>
     </section>
   );

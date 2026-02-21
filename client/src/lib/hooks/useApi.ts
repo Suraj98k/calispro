@@ -42,6 +42,7 @@ type AdminWorkoutPayload = {
   name: string;
   description: string;
   imageUrl?: string;
+  videoUrl?: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   durationEstimate?: number;
   isRecommended?: boolean;
@@ -211,6 +212,7 @@ export const useCreateWorkout = () => {
       name: string;
       description: string;
       imageUrl?: string;
+      videoUrl?: string;
       level: 'Beginner' | 'Intermediate' | 'Advanced';
       durationEstimate: number;
       exercises: {

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Search, Sparkles, Star } from 'lucide-react';
+import { Search, Sparkles, Star } from 'lucide-react';
 
 import { useExercises } from '@/lib/hooks/useApi';
 import { getExerciseVisual } from '@/lib/exerciseVisuals';
@@ -147,17 +147,10 @@ export default function ExercisesPage() {
               <div className="mt-3 flex items-center gap-2">
                 <Link
                   href={`/dashboard/track/${exercise.id}?mode=exercise`}
-                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-primary px-3 py-2 text-[11px] font-black uppercase tracking-wider text-primary-foreground"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md bg-primary px-3 py-2 text-[11px] font-black uppercase tracking-wider text-primary-foreground"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Start
-                </Link>
-                <Link
-                  href={`/dashboard/exercises/${exercise.id}`}
-                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-soft hover:text-white"
-                >
-                  Details
-                  <ArrowUpRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </article>

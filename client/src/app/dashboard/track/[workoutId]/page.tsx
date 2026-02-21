@@ -90,12 +90,22 @@ const getYouTubeEmbedUrl = (url?: string) => {
   if (!url) return null;
   const trimmed = url.trim();
   const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
-  if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+  if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}?autoplay=1&mute=1&rel=0`;
 
   const regularMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
-  if (regularMatch?.[1]) return `https://www.youtube.com/embed/${regularMatch[1]}`;
+  if (regularMatch?.[1]) return `https://www.youtube.com/embed/${regularMatch[1]}?autoplay=1&mute=1&rel=0`;
 
-  if (trimmed.includes('youtube.com/embed/')) return trimmed;
+  if (trimmed.includes('youtube.com/embed/')) {
+    return trimmed.includes('?') ? `${trimmed}&autoplay=1&mute=1&rel=0` : `${trimmed}?autoplay=1&mute=1&rel=0`;
+  }
+  return null;
+};
+
+const getInlineVideoUrl = (url?: string) => {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (/^https?:\/\/.+\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(trimmed)) return trimmed;
+  if (trimmed.includes('/video/upload/') || trimmed.includes('/videos/')) return trimmed;
   return null;
 };
 
@@ -363,7 +373,12 @@ export default function TrackingPage() {
   const visual = exercise ? getExerciseVisual(exercise.category, exercise.name) : null;
   const currentExerciseDone = currentSets.length > 0 && currentSets.every((set) => set.completed);
   const exerciseVideoUrl = getYouTubeEmbedUrl(exercise?.videoUrl);
+  const exerciseInlineVideoUrl = getInlineVideoUrl(exercise?.videoUrl);
   const exerciseImageUrl = exercise?.imageUrl || (exercise ? exerciseFallbackImages[exercise.category] : null);
+  const keyInstructions = [
+    ...(exercise?.formTips || []),
+    ...(exercise?.commonMistakes || []).map((mistake) => `Avoid: ${mistake}`),
+  ].slice(0, 4);
 
   const allDone = plannedEntries.every((entry) => (completedSets[entry.exerciseId] || []).every((set) => set.completed));
 
@@ -630,7 +645,18 @@ export default function TrackingPage() {
           </div>
           <div className="space-y-4 p-5">
             <div className="overflow-hidden rounded-xl border border-border bg-black/20">
-              {exerciseVideoUrl ? (
+              {exerciseInlineVideoUrl ? (
+                <video
+                  src={exerciseInlineVideoUrl}
+                  className="h-[260px] w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  preload="metadata"
+                />
+              ) : exerciseVideoUrl ? (
                 <iframe
                   src={exerciseVideoUrl}
                   title={`${exercise?.name || 'Exercise'} demo`}
@@ -653,17 +679,17 @@ export default function TrackingPage() {
 
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-soft">
-                {exerciseVideoUrl ? <Video className="h-4 w-4 text-primary" /> : <ImageIcon className="h-4 w-4 text-primary" />}
-                {exerciseVideoUrl ? 'Form video loaded' : 'Exercise image loaded'}
+                {exerciseInlineVideoUrl || exerciseVideoUrl ? <Video className="h-4 w-4 text-primary" /> : <ImageIcon className="h-4 w-4 text-primary" />}
+                {exerciseInlineVideoUrl || exerciseVideoUrl ? 'Form video loaded' : 'Exercise image loaded'}
               </div>
               <h3 className="text-sm font-bold text-white">Key Instructions</h3>
               <div className="space-y-2">
-                {(exercise?.instructions || []).slice(0, 4).map((instruction, idx) => (
+                {keyInstructions.map((instruction, idx) => (
                   <p key={idx} className="text-xs leading-relaxed text-soft">
                     {idx + 1}. {instruction}
                   </p>
                 ))}
-                {!exercise?.instructions?.length && <p className="text-xs text-soft">No instructions available yet.</p>}
+                {!keyInstructions.length && <p className="text-xs text-soft">No instructions available yet.</p>}
               </div>
               <Link href={`/dashboard/exercises/${currentPlan.exerciseId}`} className="inline-flex text-xs font-semibold text-primary hover:underline">
                 Open full exercise details

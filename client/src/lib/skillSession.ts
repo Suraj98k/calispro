@@ -88,10 +88,11 @@ export const getExerciseGuidance = (exercise: SkillProgramExercise) => {
 
 export const toEmbedUrl = (url?: string) => {
   if (!url) return null;
+  const params = '?autoplay=1&mute=1&rel=0';
   const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
-  if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+  if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}${params}`;
   const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
-  if (watchMatch?.[1]) return `https://www.youtube.com/embed/${watchMatch[1]}`;
-  if (url.includes('youtube.com/embed/')) return url;
+  if (watchMatch?.[1]) return `https://www.youtube.com/embed/${watchMatch[1]}${params}`;
+  if (url.includes('youtube.com/embed/')) return url.includes('?') ? `${url}&autoplay=1&mute=1&rel=0` : `${url}${params}`;
   return null;
 };

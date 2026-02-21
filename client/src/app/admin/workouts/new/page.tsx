@@ -23,6 +23,7 @@ type FormState = {
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   durationEstimate: number;
   imageUrl: string;
+  videoUrl: string;
   isRecommended: boolean;
   isGlobal: boolean;
 };
@@ -41,6 +42,7 @@ const initialForm: FormState = {
   level: 'Beginner',
   durationEstimate: 30,
   imageUrl: '',
+  videoUrl: '',
   isRecommended: false,
   isGlobal: true,
 };
@@ -105,6 +107,7 @@ export default function AdminWorkoutCreatePage() {
       level: form.level,
       durationEstimate: Math.max(5, form.durationEstimate),
       imageUrl: form.imageUrl.trim() || undefined,
+      videoUrl: form.videoUrl.trim() || undefined,
       isRecommended: form.isRecommended,
       isGlobal: form.isGlobal,
       exercises: selectedRows.map((entry) => ({
@@ -214,6 +217,13 @@ export default function AdminWorkoutCreatePage() {
               </div>
             ) : null}
           </div>
+
+          <label className="text-xs font-semibold text-soft">Workout Video URL (optional)</label>
+          <Input
+            value={form.videoUrl}
+            onChange={(e) => setForm((prev) => ({ ...prev, videoUrl: e.target.value }))}
+            placeholder="https://.../workout-video.mp4 or YouTube URL"
+          />
 
           <div className="space-y-3 rounded-md border border-border bg-surface-2/20 p-3">
             <div className="flex items-center justify-between">

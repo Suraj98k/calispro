@@ -6,7 +6,7 @@ import { AuthRequest } from '../middleware/auth.js';
 const FREE_WORKOUT_LIMIT = 4;
 
 const validateWorkoutPayload = async (body: Record<string, unknown>, { partial = false }: { partial?: boolean } = {}) => {
-  const { name, description, level, exercises, durationEstimate, imageUrl, isRecommended } = body;
+  const { name, description, level, exercises, durationEstimate, imageUrl, videoUrl, isRecommended } = body;
 
   if (!partial || name !== undefined) {
     if (typeof name !== 'string' || !name.trim()) return { error: 'name is required' };
@@ -61,6 +61,9 @@ const validateWorkoutPayload = async (body: Record<string, unknown>, { partial =
   if (level !== undefined) payload.level = level;
   if (imageUrl !== undefined) {
     payload.imageUrl = typeof imageUrl === 'string' && imageUrl.trim() ? imageUrl.trim() : undefined;
+  }
+  if (videoUrl !== undefined) {
+    payload.videoUrl = typeof videoUrl === 'string' && videoUrl.trim() ? videoUrl.trim() : undefined;
   }
   if (durationEstimate !== undefined) {
     payload.durationEstimate = typeof durationEstimate === 'number' ? durationEstimate : undefined;

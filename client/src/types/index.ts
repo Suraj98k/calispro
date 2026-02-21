@@ -114,6 +114,7 @@ export interface Workout {
   name: string;
   description: string;
   imageUrl?: string;
+  videoUrl?: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   exercises: WorkoutExercise[];
   durationEstimate?: number;
